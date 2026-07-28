@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S&OP DOCUMENT HUB</title>
+  
+  <!-- FAVICON LINK (Place your icon file named 'favicon.png' in the same folder) -->
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PDF Libraries (Runs 100% inside browser RAM) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <style>
+    /* Neo-Brutalist utility classes */
+    .brutal-card {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0px 0px #000;
+      transition: all 0.15s ease-in-out;
+    }
+    .brutal-btn {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0px 0px #000;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      transition: all 0.1s ease;
+    }
+    .brutal-btn:hover:not(:disabled) {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px 0px #000;
+    }
+    .brutal-btn:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px 0px #000;
+    }
+    .drag-over {
+      background-color: #fef08a !important; /* Yellow-200 */
+      border-color: #000 !important;
+    }
+    /* Drag and Drop Animation Styles */
+    .sortable-ghost {
+      opacity: 0.3 !important;
+      transform: scale(0.95);
+    }
+    .sortable-drag {
+      cursor: grabbing !important;
+      transform: scale(1.03) rotate(2deg) !important;
+      box-shadow: 8px 8px 0px 0px #000 !important;
+      z-index: 9999 !important;
+    }
+  </style>
+</head>
+<body class="bg-[#fef08a] min-h-screen flex flex-col font-mono p-3 sm:p-6 text-black relative">
+
+  <!-- Header Banner -->
+  <header class="brutal-card bg-white p-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="flex items-center gap-3">
+      <div class="bg-[#f97316] text-white p-2.5 border-2 border-black font-black text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        📄
+      </div>
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-black uppercase">S&OP DOCUMENT HUB</h1>
+        <span class="inline-block bg-[#fbcfe8] text-black border border-black px-2 py-0.5 text-xs font-bold uppercase mt-1">
+          OPERATIONS - PRIVATE LOCAL STUDIO
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex flex-wrap gap-2">
+      <button id="tabFilesBtn" onclick="switchTab('files')" class="brutal-btn bg-[#06b6d4] text-black px-4 py-2 text-xs uppercase">
+        📁 1. MERGE FILES
+      </button>
+      <button id="tabPagesBtn" onclick="switchTab('pages')" class="brutal-btn bg-white text-black px-4 py-2 text-xs uppercase">
+        📄 2. REORDER PAGES
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
+    
+    <!-- Left Sidebar: Controls & Instructions -->
+    <aside class="space-y-4 lg:col-span-1">
+      
+      <!-- Reset Button -->
+      <button id="resetBtn" onclick="openResetModal()" class="brutal-btn bg-[#ef4444] text-white w-full py-3 text-sm flex items-center justify-center gap-2">
+        <span>🔄 RESET ALL DATA</span>
+      </button>
+
+      <!-- Download Button -->
+      <button id="downloadBtn" disabled onclick="downloadPDF()" class="brutal-btn bg-[#84cc16] disabled:bg-gray-300 disabled:opacity-50 text-black w-full py-3.5 text-sm uppercase">
+        💾 SAVE & DOWNLOAD
+      </button>
+
+      <!-- Security Info Box -->
+      <div class="brutal-card bg-[#fbcfe8] p-4">
+        <span class="bg-black text-white px-2 py-0.5 text-[10px] font-black uppercase inline-block mb-2">
+          CLIENT-SIDE ONLY
+        </span>
+        <p class="text-xs font-bold leading-relaxed uppercase">
+          🔒 100% Client-Side. Files never leave your RAM. Zero server uploads.
+        </p>
+      </div>
+
+      <!-- Quick Tips Box -->
+      <div class="brutal-card bg-[#a3e635] p-4">
+        <h3 class="font-black text-xs uppercase underline mb-2">QUICK TIPS:</h3>
+        <p class="text-xs font-bold leading-relaxed">
+          Select files or drag and drop PDFs/Images into the workspace to merge or reorder documents instantly.
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- Right Workspace Area -->
+    <main class="lg:col-span-3 brutal-card bg-white p-6 flex flex-col justify-between">
+      <div>
+        <!-- Upload Drop Zone -->
+        <div id="dropZone" class="border-4 border-dashed border-black bg-[#fafafa] hover:bg-[#fef9c3] p-8 text-center cursor-pointer transition-all mb-6">
+          <input type="file" id="fileInput" multiple accept="application/pdf,image/png,image/jpeg,image/webp" class="hidden">
+          <div class="w-12 h-12 bg-black text-white font-black text-2xl flex items-center justify-center mx-auto mb-3 brutal-card">
+            +
+          </div>
+          <p id="dropZoneTitle" class="text-base font-black uppercase text-black">
+            DRAG & DROP PDFS OR IMAGES HERE TO MERGE WHOLE FILES
+          </p>
+          <p class="text-xs font-bold text-gray-600 mt-1 uppercase">
+            [ OR CLICK ANYWHERE INSIDE THIS BOX TO BROWSE ]
+          </p>
+        </div>
+
+        <!-- TAB 1: MERGE FILES -->
+        <section id="viewFiles" class="space-y-3">
+          <div class="flex justify-between items-center mb-2 border-b-2 border-black pb-2">
+            <h2 class="text-sm font-black uppercase">FILE WORKFLOW ORDER:</h2>
+            <span id="fileCountBadge" class="bg-[#a3e635] border border-black text-[10px] font-black px-2 py-0.5">0 FILES</span>
+          </div>
+          <div id="filesList" class="space-y-2"></div>
+        </section>
+
+        <!-- TAB 2: MERGE PAGES -->
+        <section id="viewPages" class="hidden">
+          <div class="flex justify-between items-center mb-2 border-b-2 border-black pb-2">
+            <h2 class="text-sm font-black uppercase">INDIVIDUAL PAGE GRID:</h2>
+            <span id="pageCountBadge" class="bg-[#a3e635] border border-black text-[10px] font-black px-2 py-0.5">0 PAGES</span>
+          </div>
+          <div id="pagesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+        </section>
+      </div>
+
+      <div class="border-t-2 border-black pt-4 mt-8 flex justify-between text-[10px] font-bold text-gray-500 uppercase">
+        <span>STATUS: READY</span>
+        <span>FORMAT: PDF / PNG / JPG</span>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- CUSTOM NEO-BRUTALIST RESET MODAL POP-UP -->
+  <div id="resetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="brutal-card bg-[#fef08a] max-w-md w-full p-6 space-y-4 text-center">
+      <div class="w-12 h-12 bg-[#ef4444] text-white border-2 border-black font-black text-2xl flex items-center justify-center mx-auto shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        !
+      </div>
+      <h3 class="text-xl font-black uppercase tracking-tight">CONFIRM RESET DATA</h3>
+      <p class="text-xs font-bold uppercase leading-relaxed text-gray-800">
+        ARE YOU SURE YOU WANT TO RESET AND CLEAR ALL LOADED DOCUMENTS FROM RAM?
+      </p>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeResetModal()" class="brutal-btn bg-white text-black flex-1 py-2.5 text-xs uppercase">
+          CANCEL
+        </button>
+        <button onclick="confirmResetAll()" class="brutal-btn bg-[#ef4444] text-white flex-1 py-2.5 text-xs uppercase">
+          YES, RESET ALL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    let activeTab = 'files'; // 'files' or 'pages'
+    
+    let modeFilesStore = []; // Array of files for Tab 1
+    let modePagesStore = new Map(); // Map of page IDs for Tab 2
+    let pageRawBuffers = []; // Cached array buffers for Tab 2
+
+    // --- Tab Switching Logic ---
+    function switchTab(tab) {
+      activeTab = tab;
+      const filesTabBtn = document.getElementById('tabFilesBtn');
+      const pagesTabBtn = document.getElementById('tabPagesBtn');
+      const viewFiles = document.getElementById('viewFiles');
+      const viewPages = document.getElementById('viewPages');
+      const dropZoneTitle = document.getElementById('dropZoneTitle');
+
+      if (tab === 'files') {
+        filesTabBtn.className = "brutal-btn bg-[#06b6d4] text-black px-4 py-2 text-xs uppercase";
+        pagesTabBtn.className = "brutal-btn bg-white text-black px-4 py-2 text-xs uppercase";
+        viewFiles.classList.remove('hidden');
+        viewPages.classList.add('hidden');
+        dropZoneTitle.innerText = "DRAG & DROP PDFS OR IMAGES HERE TO MERGE WHOLE FILES";
+      } else {
+        pagesTabBtn.className = "brutal-btn bg-[#06b6d4] text-black px-4 py-2 text-xs uppercase";
+        filesTabBtn.className = "brutal-btn bg-white text-black px-4 py-2 text-xs uppercase";
+        viewPages.classList.remove('hidden');
+        viewFiles.classList.add('hidden');
+        dropZoneTitle.innerText = "DRAG & DROP PDFS OR IMAGES HERE TO REORDER INDIVIDUAL PAGES";
+      }
+      checkEmptyState();
+    }
+
+    // --- Drag and Drop Setup for Upload Zone ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-over');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      handleFiles(dt.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    // --- Initialize Drag-to-Reorder Grids with Animations ---
+    const filesList = document.getElementById('filesList');
+    new Sortable(filesList, { 
+      animation: 200, 
+      handle: '.drag-handle',
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: updateOrderNumbers
+    });
+
+    const pagesGrid = document.getElementById('pagesGrid');
+    new Sortable(pagesGrid, { 
+      animation: 200, 
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: updateOrderNumbers
+    });
+
+    // --- File Processing Handler ---
+    async function handleFiles(files) {
+      if (!files.length) return;
+
+      if (activeTab === 'files') {
+        for (let file of files) {
+          const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          const arrayBuffer = await file.arrayBuffer();
+
+          if (file.type === 'application/pdf') {
+            modeFilesStore.push({ id: fileId, name: file.name, type: 'pdf', data: arrayBuffer });
+            renderFileRow(fileId, file.name, 'PDF DOCUMENT');
+          } else if (file.type.startsWith('image/')) {
+            modeFilesStore.push({ id: fileId, name: file.name, type: 'image', mime: file.type, data: arrayBuffer });
+            renderFileRow(fileId, file.name, 'IMAGE FILE');
+          }
+        }
+      } else {
+        for (let file of files) {
+          const arrayBuffer = await file.arrayBuffer();
+
+          if (file.type === 'application/pdf') {
+            const bufferIndex = pageRawBuffers.push({ type: 'pdf', data: arrayBuffer }) - 1;
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const page = await pdf.getPage(pageNum);
+              const viewport = page.getViewport({ scale: 0.3 });
+              
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              await page.render({ canvasContext: context, viewport, canvas }).promise;
+
+              const cardId = `card-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+              modePagesStore.set(cardId, { type: 'pdf', bufferIndex, pageIndex: pageNum - 1 });
+              renderPageCard(cardId, canvas.toDataURL(), pageNum, file.name);
+            }
+
+          } else if (file.type.startsWith('image/')) {
+            const bufferIndex = pageRawBuffers.push({ type: 'image', mime: file.type, data: arrayBuffer }) - 1;
+            const cardId = `card-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            modePagesStore.set(cardId, { type: 'image', bufferIndex });
+
+            const blob = new Blob([arrayBuffer], { type: file.type });
+            const imgUrl = URL.createObjectURL(blob);
+            renderPageCard(cardId, imgUrl, 1, file.name);
+          }
+        }
+      }
+
+      updateOrderNumbers();
+      checkEmptyState();
+      fileInput.value = '';
+    }
+
+    // --- UI Render Helpers ---
+    function renderFileRow(id, name, badge) {
+      const row = document.createElement('div');
+      row.dataset.id = id;
+      row.className = "brutal-card bg-[#fef9c3] p-3 flex items-center justify-between";
+      row.innerHTML = `
+        <div class="flex items-center gap-3 truncate">
+          <span class="order-badge bg-black text-white font-black text-xs px-2 py-1 border border-black">#0</span>
+          <span class="drag-handle cursor-grab font-black text-lg bg-black text-white px-2 py-0.5">☰</span>
+          <div class="truncate">
+            <p class="font-black text-xs truncate uppercase">${name}</p>
+            <span class="bg-[#06b6d4] text-black border border-black text-[9px] font-black px-1.5 py-0.2 uppercase">${badge}</span>
+          </div>
+        </div>
+        <button onclick="removeFile('${id}')" class="bg-red-500 hover:bg-red-600 text-white border-2 border-black font-black text-xs px-2.5 py-1 ml-2">DELETE</button>
+      `;
+      filesList.appendChild(row);
+    }
+
+    function renderPageCard(id, imgData, pageNum, fileName) {
+      const card = document.createElement('div');
+      card.dataset.id = id;
+      card.className = "group relative brutal-card bg-white p-2.5 cursor-move flex flex-col items-center";
+      card.innerHTML = `
+        <span class="order-badge absolute top-2 left-2 bg-black text-white font-black text-[10px] px-1.5 py-0.5 border border-black z-10">#0</span>
+        <button onclick="removePage('${id}')" class="absolute -top-2 -right-2 bg-red-500 text-white font-black border-2 border-black w-6 h-6 flex items-center justify-center text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-red-600 z-10">
+          ✕
+        </button>
+        <img src="${imgData}" class="border-2 border-black mb-2 max-h-40 object-contain w-full bg-gray-100 mt-3" />
+        <div class="text-[10px] font-black w-full truncate text-center uppercase">${fileName}</div>
+        <div class="text-[9px] font-bold text-gray-600">PAGE ${pageNum}</div>
+      `;
+      pagesGrid.appendChild(card);
+    }
+
+    function updateOrderNumbers() {
+      const fileRows = Array.from(filesList.children);
+      fileRows.forEach((row, index) => {
+        const badge = row.querySelector('.order-badge');
+        if (badge) badge.innerText = `#${index + 1}`;
+      });
+
+      const pageCards = Array.from(pagesGrid.children);
+      pageCards.forEach((card, index) => {
+        const badge = card.querySelector('.order-badge');
+        if (badge) badge.innerText = `#${index + 1}`;
+      });
+    }
+
+    function removeFile(id) {
+      const element = document.querySelector(`#filesList [data-id="${id}"]`);
+      if (element) element.remove();
+      modeFilesStore = modeFilesStore.filter(f => f.id !== id);
+      updateOrderNumbers();
+      checkEmptyState();
+    }
+
+    function removePage(id) {
+      const element = document.querySelector(`#pagesGrid [data-id="${id}"]`);
+      if (element) {
+        element.remove();
+        modePagesStore.delete(id);
+      }
+      updateOrderNumbers();
+      checkEmptyState();
+    }
+
+    // --- Custom Reset Modal Functions ---
+    function openResetModal() {
+      document.getElementById('resetModal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.add('hidden');
+    }
+
+    function confirmResetAll() {
+      modeFilesStore = [];
+      modePagesStore.clear();
+      pageRawBuffers = [];
+      filesList.innerHTML = '';
+      pagesGrid.innerHTML = '';
+      closeResetModal();
+      checkEmptyState();
+    }
+
+    function checkEmptyState() {
+      const btn = document.getElementById('downloadBtn');
+      const fileBadge = document.getElementById('fileCountBadge');
+      const pageBadge = document.getElementById('pageCountBadge');
+
+      fileBadge.innerText = `${filesList.children.length} FILES`;
+      pageBadge.innerText = `${pagesGrid.children.length} PAGES`;
+
+      if (activeTab === 'files') {
+        btn.disabled = filesList.children.length === 0;
+      } else {
+        btn.disabled = pagesGrid.children.length === 0;
+      }
+    }
+
+    // --- PDF Export Logic ---
+    async function downloadPDF() {
+      const btn = document.getElementById('downloadBtn');
+      btn.disabled = true;
+      btn.innerText = "PROCESSING PDF...";
+
+      try {
+        const mergedPdf = await PDFLib.PDFDocument.create();
+
+        if (activeTab === 'files') {
+          const fileRows = Array.from(filesList.children);
+          for (let row of fileRows) {
+            const fileId = row.dataset.id;
+            const fileObj = modeFilesStore.find(f => f.id === fileId);
+            if (!fileObj) continue;
+
+            if (fileObj.type === 'pdf') {
+              const srcDoc = await PDFLib.PDFDocument.load(fileObj.data.slice(0));
+              const indices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
+              const copiedPages = await mergedPdf.copyPages(srcDoc, indices);
+              copiedPages.forEach(p => mergedPdf.addPage(p));
+            } else if (fileObj.type === 'image') {
+              await embedImageToPdf(mergedPdf, fileObj);
+            }
+          }
+
+        } else {
+          const pageCards = Array.from(pagesGrid.children);
+          for (let card of pageCards) {
+            const cardId = card.dataset.id;
+            const pageData = modePagesStore.get(cardId);
+            if (!pageData) continue;
+
+            const rawObj = pageRawBuffers[pageData.bufferIndex];
+            if (pageData.type === 'pdf') {
+              const srcDoc = await PDFLib.PDFDocument.load(rawObj.data.slice(0));
+              const [copiedPage] = await mergedPdf.copyPages(srcDoc, [pageData.pageIndex]);
+              mergedPdf.addPage(copiedPage);
+            } else if (pageData.type === 'image') {
+              await embedImageToPdf(mergedPdf, rawObj);
+            }
+          }
+        }
+
+        const pdfBytes = await mergedPdf.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = activeTab === 'files' ? 'MERGED_DOCUMENT.pdf' : 'REORDERED_PAGES.pdf';
+        link.click();
+
+      } catch (error) {
+        alert("Error generating PDF: " + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "💾 SAVE & DOWNLOAD";
+      }
+    }
+
+    async function embedImageToPdf(pdfDoc, imageObj) {
+      let image;
+      if (imageObj.mime === 'image/png') {
+        image = await pdfDoc.embedPng(imageObj.data.slice(0));
+      } else {
+        image = await pdfDoc.embedJpg(imageObj.data.slice(0));
+      }
+      const page = pdfDoc.addPage([image.width, image.height]);
+      page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+    }
+  </script>
+</body>
+</html>
