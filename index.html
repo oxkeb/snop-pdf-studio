@@ -6,7 +6,7 @@
   <title>S&OP DOCUMENT HUB</title>
   
   <!-- FAVICON LINK (Place your icon file named 'favicon.png' in the same folder) -->
-   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="favicon.ico">
 
   <!-- Tailwind CSS CDN -->
@@ -94,6 +94,19 @@
       <button id="resetBtn" onclick="openResetModal()" class="brutal-btn bg-[#ef4444] text-white w-full py-3 text-sm flex items-center justify-center gap-2">
         <span>🔄 RESET ALL DATA</span>
       </button>
+
+      <!-- Rename Output File Field -->
+      <div class="brutal-card bg-white p-3 space-y-1">
+        <label for="outputFileName" class="block text-[11px] font-black uppercase text-black">
+          ✏️ OUTPUT FILE NAME:
+        </label>
+        <input 
+          type="text" 
+          id="outputFileName" 
+          placeholder="SNOP_MERGED_DOCUMENT" 
+          class="w-full bg-[#fafafa] border-2 border-black p-2 text-xs font-bold uppercase focus:outline-none focus:bg-[#fef9c3]"
+        />
+      </div>
 
       <!-- Download Button -->
       <button id="downloadBtn" disabled onclick="downloadPDF()" class="brutal-btn bg-[#84cc16] disabled:bg-gray-300 disabled:opacity-50 text-black w-full py-3.5 text-sm uppercase">
@@ -407,6 +420,7 @@
       pageRawBuffers = [];
       filesList.innerHTML = '';
       pagesGrid.innerHTML = '';
+      document.getElementById('outputFileName').value = '';
       closeResetModal();
       checkEmptyState();
     }
@@ -474,7 +488,12 @@
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = activeTab === 'files' ? 'MERGED_DOCUMENT.pdf' : 'REORDERED_PAGES.pdf';
+        
+        // Custom filename handling with fallback to "SNOP_MERGED_DOCUMENT"
+        const customInput = document.getElementById('outputFileName').value.trim();
+        const finalFileName = customInput ? customInput : 'SNOP_MERGED_DOCUMENT';
+        link.download = `${finalFileName.endsWith('.pdf') ? finalFileName : finalFileName + '.pdf'}`;
+        
         link.click();
 
       } catch (error) {
