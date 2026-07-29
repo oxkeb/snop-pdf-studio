@@ -45,6 +45,9 @@
       border-color: #000 !important;
     }
     /* Drag and Drop Animation Styles */
+    #filesList > div, #pagesGrid > div {
+      transition: transform 250ms cubic-bezier(0.2, 0, 0.2, 1);
+    }
     .sortable-ghost {
       opacity: 0.3 !important;
       transform: scale(0.95);
@@ -54,6 +57,7 @@
       transform: scale(1.03) rotate(2deg) !important;
       box-shadow: 8px 8px 0px 0px #000 !important;
       z-index: 9999 !important;
+      transition: none !important; /* Prevents lag on the active dragged item */
     }
   </style>
 </head>
@@ -267,6 +271,7 @@
     const filesList = document.getElementById('filesList');
     new Sortable(filesList, { 
       animation: 200, 
+      easing: "cubic-bezier(0.2, 0, 0.2, 1)",
       handle: '.drag-handle',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
@@ -276,6 +281,7 @@
     const pagesGrid = document.getElementById('pagesGrid');
     new Sortable(pagesGrid, { 
       animation: 200, 
+      easing: "cubic-bezier(0.2, 0, 0.2, 1)",
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       onEnd: updateOrderNumbers
